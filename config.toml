@@ -1,0 +1,11 @@
+[Authentication]
+DirectoryId = "your_directory_id"
+SubscriptionId = "subscription_id"
+
+[Deploy]
+ResourceGroupName = "resource_group_name"
+Location = "southeastasia"
+TemplateFilePath = "linux.bicep"
+vmName = "your_vm_name"
+adminUserName = "azureuser"
+adminPassword = "your_password"
