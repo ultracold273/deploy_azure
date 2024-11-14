@@ -90,6 +90,10 @@ setup_acme() {
         --key-file $CERT_PATH/private.key \
         --fullchain-file $CERT_PATH/certificate.crt"
     run_as_user acme "acme.sh --upgrade --auto-upgrade"
+
+    echo "Grant keys to certusers groups"
+    execute chown -R acme:certusers $CERT_PATH
+    execute chmod -R 750 $CERT_PATH
 }
 
 run_as_user() {
@@ -192,4 +196,7 @@ setup_nginx
 setup_acme
 setup_trojan
 enable_congestion_control
+
+echo "Done!"
+echo "Now you can setup your client with passcode: $PASSWORD1 or $PASSWORD2"
 
