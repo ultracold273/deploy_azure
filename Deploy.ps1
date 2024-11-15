@@ -91,3 +91,11 @@ if ([string]::IsNullOrEmpty($adminPassword)) {
 } else {
     Write-Host "you can now use `ssh $adminUserName@$hostname` to connect to the VM."
 }
+
+$trojanAddress="https://raw.githubusercontent.com/ultracold273/deploy_azure/refs/heads/main/trojan.sh"
+
+$commandOutput = $(az vm run-command invoke `
+    --resource-group $ResourceGroupName `
+    --name $vmName `
+    --command-id RunShellScript `
+    --scripts "curl -s $trojanAddress | bash -s -- $hostname $ipAddress")
