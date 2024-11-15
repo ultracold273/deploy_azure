@@ -51,11 +51,11 @@ if [ -z "$RESOURCE_GROUP" ]; then
 fi
 
 echo "Deploying..."
-PARAMETERS="pLocation=\"$LOCATION\" pVmName=\"$VM_NAME\" pAdminUsername=\"$ADMIN_USERNAME\" pAdminPassword=\"$ADMIN_PASSWORD\" pSshPublicKey=\"\""
+PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pSshPublicKey="
 deploymentOutput=$(az deployment group create \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --template-file "$TEMPLATE_FILE_PATH" \
-    --parameters "$PARAMETERS" \
+    --parameters $PARAMETERS \
     --output json)
 
 HOSTNAME=$(echo "$deploymentOutput" | jq '.properties.outputs.hostname.value' )
