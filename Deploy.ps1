@@ -1,4 +1,16 @@
 
+$DirectoryId = "your_directory_id"
+$SubscriptionId = "your_subscription_id"
+
+$ResourceGroupName = "your_resource_id"
+$Location = "southeastasia"
+$TemplateFilePath = ".\linux.bicep"
+$vmName = "your_vm_name"
+$adminUserName = "your_admin_username"
+$adminPassword = "your_admin_password"
+
+$publicKey = $null
+
 function DeployTemplateAzCli {
     param
     (
@@ -47,6 +59,41 @@ function DeployTemplateAzCli {
         --output json)
 
     return $deploymentOutput | ConvertFrom-Json
+}
+
+function Check-Password {
+    param (
+        [string]$input
+    )
+
+    $length = $input.Length
+    if ($length -lt 6 -or $length -gt 72) {
+        Write-Host "字符串长度必须在6到72之间。"
+        return $false
+    }
+
+    # 定义条件
+    $hasUppercase = $input -match '[A-Z]'     # 大写字符
+    $hasLowercase = $input -match '[a-z]'     # 小写字符
+    $hasDigit = $input -match '[0-9]'         # 数字
+    $hasSpecial = $input -match '[^a-zA-Z0-9]' # 特殊字符
+
+    # 计分变量
+    $score = 0
+
+    # 检查每个条件
+    if ($hasUppercase) { $score++ }
+    if ($hasLowercase) { $score++ }
+    if ($hasDigit) { $score++ }
+    if ($hasSpecial) { $score++ }
+
+    # 判断满足的条件数
+    if ($score -ge 3) {
+        return $true
+    } else {
+        Write-Host "Password does not satisfy the requirements."
+        return $false
+    }
 }
 
 if ([string]::IsNullOrEmpty($adminPassword)) {
