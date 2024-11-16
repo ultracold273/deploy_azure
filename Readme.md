@@ -3,13 +3,11 @@
 Make sure your system has installed the [Azure Cli](https://learn.microsoft.com/en-us/cli/azure/). If not, please follow the guidelines in the link to install it. Also make sure the utility is correctly put in your system's PATH.
 
 ## Configuration
-The configuration files looks like in the following format:
-```toml
-[Authentication]
+The configuration locates in each shell script in the following format:
+```
 DirectoryId = "your_directory_id"
 SubscriptionId = "subscription_id"
 
-[Deploy]
 ResourceGroupName = "resource_group_name"
 Location = "southeastasia"
 TemplateFilePath = "linux.bicep"
@@ -19,7 +17,7 @@ adminPassword = "your_password"
 ``` 
 Find your directory ID (i.e, tenant ID in some cases) and the subscription ID you own. Put them in the respective field.
 
-In the `Deploy` table, you'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Noted that try to choose some unique name for your vm as it will also serve as the DNS for your VM.
+You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Noted that try to choose some unique name for your vm as it will also serve as the DNS for your VM.
 
 # Execute
 On windows, use powershell to execute:
