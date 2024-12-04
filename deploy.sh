@@ -1,14 +1,28 @@
 #!/bin/bash
+TOML_FILE="config.toml"
 
-DIRECTORY_ID="your_directory_id" # MSFT Test Tenant (wc8wh.onmicrosoft.com)
-SUBSCRIPTION_ID="your_subscription_id" # MS FTE $150 Monthly Subscription
-TEMPLATE_FILE_PATH="./linux.bicep"
+declare -A config
+while IFS='=' read -r key value; do
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | sed 's/ #.*//;s/[ "]*//g' | xargs)
 
-RESOURCE_GROUP_NAME="resource_group_name"
-LOCATION="southeastasia"
-VM_NAME="your_vm_name"
-ADMIN_USERNAME="your_admin_username"
-ADMIN_PASSWORD="your_admin_password"
+    [ -z "$key" ] || [ -z "$value" ] && continue
+
+    echo "$key = $value"
+    config["$key"]="$value"
+done < <(grep -E '^[^#]*=' "$TOML_FILE")
+
+TARGET_KEYS=("DIRECTORY_ID", "SUBSCRIPTION_ID", "RESOURCE_GROUP_NAME", "LOCATION", "VM_NAME", "ADMIN_USERNAME", "ADMIN_PASSWORD")
+
+for key in "{TARGET_KEYS[@]}"; do
+    if [[ -v config[$key] ]]; then
+        echo "Check $key -- DONE"
+        declare "$key=${config[$key]}"
+    else
+        echo "Cannot find $key, exit..."
+        exit 1
+    fi
+done
 
 check_password() {
     local input="$1"
