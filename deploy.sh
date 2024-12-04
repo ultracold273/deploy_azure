@@ -12,7 +12,7 @@ while IFS='=' read -r key value; do
     config["$key"]="$value"
 done < <(grep -E '^[^#]*=' "$TOML_FILE")
 
-TARGET_KEYS=("DIRECTORY_ID", "SUBSCRIPTION_ID", "RESOURCE_GROUP_NAME", "LOCATION", "VM_NAME", "ADMIN_USERNAME", "ADMIN_PASSWORD")
+TARGET_KEYS=("DIRECTORY_ID" "SUBSCRIPTION_ID" "RESOURCE_GROUP_NAME" "LOCATION" "VM_NAME" "ADMIN_USERNAME" "ADMIN_PASSWORD")
 
 for key in "${TARGET_KEYS[@]}"; do
     if [[ -v config[$key] ]]; then
