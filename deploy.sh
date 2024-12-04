@@ -111,8 +111,11 @@ IPADDRESS=$(echo "$deploymentOutput" | jq '.properties.outputs.ipAddress.value' 
 
 TROJAN_ADDRESS="https://raw.githubusercontent.com/ultracold273/deploy_azure/refs/heads/main/trojan.sh"
 
-az vm run-command invoke \
+scriptOutput=$(az vm run-command invoke \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --name "$VM_NAME" \
     --command-id RunShellScript \
     --scripts "curl -s $TROJAN_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS"
+    --output json)
+
+echo $scriptOutput
