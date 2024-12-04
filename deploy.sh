@@ -14,7 +14,7 @@ done < <(grep -E '^[^#]*=' "$TOML_FILE")
 
 TARGET_KEYS=("DIRECTORY_ID", "SUBSCRIPTION_ID", "RESOURCE_GROUP_NAME", "LOCATION", "VM_NAME", "ADMIN_USERNAME", "ADMIN_PASSWORD")
 
-for key in "{TARGET_KEYS[@]}"; do
+for key in "${TARGET_KEYS[@]}"; do
     if [[ -v config[$key] ]]; then
         echo "Check $key -- DONE"
         declare "$key=${config[$key]}"
