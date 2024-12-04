@@ -36,6 +36,30 @@ check_password() {
     fi
 }
 
+validate_vm_name() {
+    local name="$1"
+    local length=${#name}
+
+    if [[ $length -lt 1 || $length -gt 64 ]]; then
+        echo "Name length shall be within 1 and 64."
+        return 1
+    fi
+
+    if [[ ! "$name" =~ ^[a-zA-Z0-9]([-a-zA-Z0-9]{0,62})[a-zA-Z0-9]$ ]]; then
+        echo "Name shall only contain letters, digits or hypen and cannot start or end with hypens."
+        return 1
+    fi
+
+    return 0
+}
+
+validate_vm_name $VM_NAME
+status=$?
+if [[ $status -ne 0 ]]; then
+    echo "Invalid VM name"
+    exit 1
+fi
+
 check_password $ADMIN_PASSWORD
 status=$?
 if [[ $status -eq 1 ]]; then
