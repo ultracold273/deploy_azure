@@ -99,7 +99,7 @@ function Confirm-Password {
     )
 
     if ($Passkey.Length -lt 6 -or $Passkey.Length -gt 72) {
-        Write-Host "The password must be at least 12 characters and at most 72 characters long."
+        Write-Host "The password must be at least 6 characters and at most 72 characters long."
         exit 1
     }
 
