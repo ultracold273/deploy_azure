@@ -63,7 +63,7 @@ $Location = $configs["LOCATION"]
 $VmName = $configs["VM_NAME"]
 $AdminUsername = $configs["ADMIN_USERNAME"]
 $AdminPassword = $configs["ADMIN_PASSWORD"]
-$TemplateFilePath = "linux2.bicep"
+$TemplateFilePath = "linux.bicep"
 
 Write-Host "DirectoryId: $DirectoryId"
 Write-Host "SubscriptionId: $SubscriptionId"
