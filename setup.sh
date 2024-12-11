@@ -106,13 +106,10 @@ setup_trojan() {
     TROJAN_CONFIG=/usr/local/etc/trojan
     TROJAN_CONFIG_FILE=$TROJAN_CONFIG/config.json
     echo "Install Trojan ..."
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/trojan-gfw/trojan-quickstart/master/trojan-quickstart.sh)"
+    curl -fsSL https://raw.githubusercontent.com/ultracold273/deploy_azure/main/go-trojan.sh | bash -s -- $CERT_PATH $PASSWORD1
+
     execute chown -R trojan:trojan $TROJAN_CONFIG
     execute rm $TROJAN_CONFIG_FILE
-    execute generate_trojan_config $TROJAN_CONFIG_FILE
-    execute sed -i '/\[Service\]/a User=trojan' /etc/systemd/system/trojan.service
-
-    execute systemctl daemon-reload
 
     echo "Enable Trojan to bind ports with number lower than 1024"
     execute setcap CAP_NET_BIND_SERVICE=+eip $TROJAN_BIN
@@ -127,62 +124,6 @@ enable_congestion_control() {
     echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
     sysctl -p
-}
-
-generate_trojan_config() {
-    cat<<EOF > $1
-{
-    "run_type": "server",
-    "local_addr": "0.0.0.0",
-    "local_port": 443,
-    "remote_addr": "127.0.0.1",
-    "remote_port": 80,
-    "password": [
-        "$PASSWORD1",
-        "$PASSWORD2"
-    ],
-    "log_level": 1,
-    "ssl": {
-        "cert": "$CERT_PATH/certificate.crt",
-        "key": "$CERT_PATH/private.key",
-        "key_password": "",
-        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384",
-        "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-        "prefer_server_cipher": true,
-        "alpn": [
-            "http/1.1"
-        ],
-        "alpn_port_override": {
-            "h2": 81
-        },
-        "reuse_session": true,
-        "session_ticket": false,
-        "session_timeout": 600,
-        "plain_http_response": "",
-        "curves": "",
-        "dhparam": ""
-    },
-    "tcp": {
-        "prefer_ipv4": false,
-        "no_delay": true,
-        "keep_alive": true,
-        "reuse_port": false,
-        "fast_open": false,
-        "fast_open_qlen": 20
-    },
-    "mysql": {
-        "enabled": false,
-        "server_addr": "127.0.0.1",
-        "server_port": 3306,
-        "database": "trojan",
-        "username": "trojan",
-        "password": "",
-        "key": "",
-        "cert": "",
-        "ca": ""
-    }
-}
-EOF
 }
 
 if [ $# -lt 2 ]; then

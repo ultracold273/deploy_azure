@@ -163,13 +163,13 @@ if ($null -eq $IpAddress -or $null -eq $Hostname) {
 Write-Host "IP Address: $IpAddress"
 Write-Host "Hostname: $Hostname"
 
-$trojanAddress = "https://raw.githubusercontent.com/ultracold273/deploy_azure/refs/heads/main/trojan.sh"
+$setupAddress = "https://raw.githubusercontent.com/ultracold273/deploy_azure/main/setup.sh"
 
 $commandOutput = az vm run-command invoke `
     --resource-group $ResourceGroupName `
     --name $VmName `
     --command-id RunShellScript `
-    --scripts "curl -s $trojanAddress | bash -s -- $Hostname $IpAddress" | Tee-Object -Variable commandOutput
+    --scripts "curl -s $setupAddress | bash -s -- $Hostname $IpAddress" | Tee-Object -Variable commandOutput
 
 $commandOutput = $commandOutput | ConvertFrom-Json
 $Message = $commandOutput.value[0].message

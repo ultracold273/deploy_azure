@@ -19,7 +19,7 @@ if [[ -z $CERTPATH ]]; then
     exit 1
 fi
 
-if [[ ! -d $CERTPATH ]]; then
+if ! [[ -d $CERTPATH ]]; then
     echo Please enter a valid path for SSL certificate.
     exit 1
 fi
