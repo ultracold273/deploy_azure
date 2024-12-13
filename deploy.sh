@@ -104,7 +104,7 @@ deploymentOutput=$(az deployment group create \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --template-file "$TEMPLATE_FILE_PATH" \
     --parameters $PARAMETERS \
-    --output json)
+    --output json | tee /dev/tty)
 
 HOSTNAME=$(echo "$deploymentOutput" | jq '.properties.outputs.hostname.value' )
 IPADDRESS=$(echo "$deploymentOutput" | jq '.properties.outputs.ipAddress.value' )
@@ -116,6 +116,6 @@ scriptOutput=$(az vm run-command invoke \
     --name "$VM_NAME" \
     --command-id RunShellScript \
     --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS"
-    --output json)
+    --output json | tee /dev/tty)
 
 echo $scriptOutput
