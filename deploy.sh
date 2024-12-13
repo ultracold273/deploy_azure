@@ -90,6 +90,10 @@ elif [[ $status -eq 2 ]]; then
     exit 1
 fi
 
+# Disable the subscription selector feature
+az config set core.login_experience_v2=off
+
+# Login and set the subscription
 az login --tenant $DIRECTORY_ID
 az account set --subscription $SUBSCRIPTION_ID
 
@@ -110,6 +114,9 @@ deploymentOutput=$(az deployment group create \
 
 HOSTNAME=$(echo "$deploymentOutput" | jq '.properties.outputs.hostname.value' )
 IPADDRESS=$(echo "$deploymentOutput" | jq '.properties.outputs.ipAddress.value' )
+
+echo VM Hostname: $HOSTNAME
+echo VM IP Address: $IPADDRESS
 
 SETUP_ADDRESS="https://raw.githubusercontent.com/ultracold273/deploy_azure/main/setup.sh"
 

@@ -54,9 +54,10 @@ cd "$NAME"
 echo Installing $NAME $VERSION to $BINARYPATH...
 install -Dm755 "$NAME" "$BINARYPATH"
 
+EXAMPLE_FILE="server.json"
 echo Installing $NAME server config to $CONFIGPATH...
 if ! [[ -f "$CONFIGPATH" ]]; then
-    cat > "$CONFIGPATH" << EOF
+    cat > "$EXAMPLE_FILE" << EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -108,6 +109,9 @@ if ! [[ -f "$CONFIGPATH" ]]; then
     }
 }
 EOF
+    install -Dm644 "$EXAMPLE_FILE" "$CONFIGPATH"
+else
+    echo Skipping installing $NAME server config...
 fi
 
 if [[ -d "$SYSTEMDPREFIX" ]]; then

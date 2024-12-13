@@ -121,6 +121,10 @@ Confirm-VmName -VmName $VmName
 
 Confirm-Password -Passkey $AdminPassword
 
+# Disable the subscription selector
+az config set core.login_experience_v2=off
+
+# Login and set the subscription
 az login --tenant $DirectoryId # --use-device-code
 az account set --subscription $SubscriptionId
 
