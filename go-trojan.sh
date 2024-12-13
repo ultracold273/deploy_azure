@@ -25,7 +25,7 @@ if ! [[ -d $CERTPATH ]]; then
 fi
 
 if [[ -z $PASSKEY ]]; then
-    echo No Passkey passed
+    echo Please pass a password.
     exit 1
 fi
 
