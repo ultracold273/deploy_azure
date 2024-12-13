@@ -1,6 +1,8 @@
 #!/bin/bash
 TOML_FILE="config.toml"
 
+TEMPLATE_FILE_PATH="linux.bicep"
+
 declare -A config
 while IFS='=' read -r key value; do
     key=$(echo "$key" | xargs)
