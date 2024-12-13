@@ -124,7 +124,7 @@ scriptOutput=$(az vm run-command invoke \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --name "$VM_NAME" \
     --command-id RunShellScript \
-    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS"
+    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS" \
     --output json | tee /dev/tty)
 
 echo $scriptOutput

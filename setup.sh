@@ -109,8 +109,7 @@ setup_trojan() {
     curl -fsSL https://raw.githubusercontent.com/ultracold273/deploy_azure/main/go-trojan.sh | bash -s -- $CERT_PATH $PASSWORD1
 
     execute chown -R trojan:trojan $TROJAN_CONFIG
-    execute rm $TROJAN_CONFIG_FILE
-
+    
     echo "Enable Trojan to bind ports with number lower than 1024"
     execute setcap CAP_NET_BIND_SERVICE=+eip $TROJAN_BIN
 
