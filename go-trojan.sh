@@ -35,7 +35,7 @@ TARBALL="$NAME-$VERSION-linux-amd64.tar.xz"
 DOWNLOADURL="https://github.com/trojan-gfw/$NAME/releases/download/v$VERSION/$TARBALL"
 TMPDIR="$(mktemp -d)"
 INSTALLPREFIX=/usr/local
-SYSTEMDPREFIX=/etc/systemd/system
+SYSTEMDPREFIX=/usr/lib/systemd/system
 
 BINARYPATH="$INSTALLPREFIX/bin/$NAME"
 CONFIGPATH="$INSTALLPREFIX/etc/$NAME/config.json"

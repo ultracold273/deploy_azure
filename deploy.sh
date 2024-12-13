@@ -127,4 +127,10 @@ scriptOutput=$(az vm run-command invoke \
     --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS" \
     --output json | tee /dev/tty)
 
-echo $scriptOutput
+MESSAGE=$(echo "$scriptOutput" | jq '.value[0].message' )
+
+echo $MESSAGE
+
+if [[ "$MESSAGE" =~ "Now you can setup your client with passcode: (\w+)" ]]; then
+    echo Passcode 1: ${BASH_REMATCH[1]}
+fi

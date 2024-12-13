@@ -139,4 +139,3 @@ enable_congestion_control
 
 echo "Done!"
 echo "Now you can setup your client with passcode: $PASSWORD1"
-
