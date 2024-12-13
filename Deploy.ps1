@@ -178,11 +178,11 @@ $commandOutput = az vm run-command invoke `
 $commandOutput = $commandOutput | ConvertFrom-Json
 $Message = $commandOutput.value[0].message
 
-if ($Message -match "Now you can setup your client with passcode: (\w+) or (\w+)") {
+if ($Message -match "Now you can setup your client with passcode: (\w+)") {
     $passcode1 = $matches[1]
-    $passcode2 = $matches[2]
+    # $passcode2 = $matches[2]
     Write-Host "Passcode 1: $passcode1"
-    Write-Host "Passcode 2: $passcode2"
+    # Write-Host "Passcode 2: $passcode2"
 } else {
     Write-Host "Failed to get the passcode. Exit.."
     exit 1

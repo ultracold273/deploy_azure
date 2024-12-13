@@ -138,5 +138,5 @@ setup_trojan
 enable_congestion_control
 
 echo "Done!"
-echo "Now you can setup your client with passcode: $PASSWORD1 or $PASSWORD2"
+echo "Now you can setup your client with passcode: $PASSWORD1"
 
