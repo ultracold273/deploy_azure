@@ -96,7 +96,7 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
       {
         name: 'Allow-CustomPort'
         properties: {
-          protocol: 'Any'
+          protocol: '*'
           sourcePortRange: '*'
           destinationPortRange: string(pCustomPort)
           sourceAddressPrefix: '*'
