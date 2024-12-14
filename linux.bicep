@@ -5,6 +5,7 @@ param pAdminUsername string
 param pAdminPassword string
 @secure()
 param pSshPublicKey string
+param pCustomPort int?
 
 // Network Resource Declaration
 var vAddressPrefix = '10.1.0.0/16'
@@ -51,7 +52,7 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
   name: 'nsg-${pVmName}'
   location: pLocation
   properties: {
-    securityRules: [
+    securityRules: union([
       {
         name: 'Allow-SSH'
         properties: {
@@ -91,7 +92,21 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
           direction: 'Inbound'
         }
       }
-    ]
+    ], (pCustomPort == null) ? [] : [
+      {
+        name: 'Allow-CustomPort'
+        properties: {
+          protocol: 'Any'
+          sourcePortRange: '*'
+          destinationPortRange: string(pCustomPort)
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Allow'
+          priority: 130
+          direction: 'Inbound'
+        }
+      }
+    ])
   }
 }
 

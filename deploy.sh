@@ -90,6 +90,18 @@ elif [[ $status -eq 2 ]]; then
     exit 1
 fi
 
+# Generate a random number between 1024 and 65536
+PORT=$(od -An -N2 -i /dev/urandom | awk '{print $1 % 64513 + 1024}')
+
+echo Directory Id: $DIRECTORY_ID
+echo Subscription Id: $SUBSCRIPTION_ID
+echo Resource Group Name: $RESOURCE_GROUP_NAME
+echo Location: $LOCATION
+echo VM Name: $VM_NAME
+echo Admin Username: $ADMIN_USERNAME
+echo Admin Password: $ADMIN_PASSWORD
+echo Port: $PORT
+
 # Disable the subscription selector feature
 az config set core.login_experience_v2=off
 
@@ -97,15 +109,15 @@ az config set core.login_experience_v2=off
 az login --tenant $DIRECTORY_ID
 az account set --subscription $SUBSCRIPTION_ID
 
-# # test if the resource group exists
-RESOURCE_GROUP=$(az group show --name $RESOURCE_GROUP_NAME --query "name" --output tsv 2>/dev/null)
-if [ -z "$RESOURCE_GROUP" ]; then
+# test if the resource group exists
+resourceGroup=$(az group show --name $RESOURCE_GROUP_NAME --query "name" --output tsv 2>/dev/null)
+if [ -z "$resourceGroup" ]; then
     echo "Resource Group $RESOURCE_GROUP_NAME does not exist. Creating it ..."
     az group create --name $RESOURCE_GROUP_NAME --location $LOCATION --output none
 fi
 
 echo "Deploying..."
-PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pSshPublicKey="
+PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pCustomPort=$PORT pSshPublicKey="
 deploymentOutput=$(az deployment group create \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --template-file "$TEMPLATE_FILE_PATH" \
@@ -124,13 +136,14 @@ scriptOutput=$(az vm run-command invoke \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --name "$VM_NAME" \
     --command-id RunShellScript \
-    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS" \
+    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS $PORT" \
     --output json | tee /dev/tty)
 
 MESSAGE=$(echo "$scriptOutput" | jq '.value[0].message' )
 
 echo $MESSAGE
 
-if [[ "$MESSAGE" =~ "Now you can setup your client with passcode: (\w+)" ]]; then
+if [[ "$MESSAGE" =~ "Now you can setup your client with passcode: ([a-z0-9A-Z]+) \(Trojan\) and ([a-z0-9A-Z]+) \(SS\)" ]]; then
     echo Passcode 1: ${BASH_REMATCH[1]}
+    echo Passcode 2: ${BASH_REMATCH[2]}
 fi

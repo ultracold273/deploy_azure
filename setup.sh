@@ -4,8 +4,9 @@ CERT_PATH=/etc/letsencrypt/live
 CERT_CHALLENGE_PATH=/var/www/acme-challenge
 DOMAIN=$1
 IPADDR=$2
+SS_PORT=$3
 PASSWORD1=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 10)
-PASSWORD2=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 10)
+PASSWORD2=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)
 
 execute() {
     echo "Execute: $*"
@@ -119,6 +120,18 @@ setup_trojan() {
     echo "0 0 1 * * killall -s SIGUSR1 trojan" | crontab -u trojan -
 }
 
+setup_shadowsocks() {
+    SS_BIN=/usr/local/bin/ssservice
+    SS_CONFIG=/usr/local/etc/shadowsocks
+    SS_CONFIG_FILE=$SS_CONFIG/config.json
+
+    echo Install Shadowsocks ..
+    curl -fsSL https://raw.githubusercontent.com/ultracold273/deploy_azure/main/go-shadowsocks.sh | bash -s -- $SS_PORT $PASSWORD2
+
+    execute systemctl enable shadowsocks
+    execute systemctl restart shadowsocks
+}
+
 enable_congestion_control() {
     echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
@@ -135,7 +148,8 @@ create_users
 setup_nginx
 setup_acme
 setup_trojan
+setup_shadowsocks
 enable_congestion_control
 
 echo "Done!"
-echo "Now you can setup your client with passcode: $PASSWORD1"
+echo "Now you can setup your client with passcode: $PASSWORD1 (Trojan) and $PASSWORD2 (SS)"
