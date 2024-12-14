@@ -151,5 +151,5 @@ setup_trojan
 setup_shadowsocks
 enable_congestion_control
 
-echo "Done!"
-echo "Now you can setup your client with passcode: $PASSWORD1 (Trojan) and $PASSWORD2 (SS)"
+echo Done!
+echo \[Summary\]: Setup your Trojan client with $PASSWORD1 and SS client with $PASSWORD2, Port: $SS_PORT

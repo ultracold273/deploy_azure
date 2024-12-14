@@ -142,8 +142,3 @@ scriptOutput=$(az vm run-command invoke \
 MESSAGE=$(echo "$scriptOutput" | jq '.value[0].message' )
 
 echo $MESSAGE
-
-if [[ "$MESSAGE" =~ "Now you can setup your client with passcode: ([a-z0-9A-Z]+) \(Trojan\) and ([a-z0-9A-Z]+) \(SS\)" ]]; then
-    echo Passcode 1: ${BASH_REMATCH[1]}
-    echo Passcode 2: ${BASH_REMATCH[2]}
-fi

@@ -64,6 +64,7 @@ $VmName = $configs["VM_NAME"]
 $AdminUsername = $configs["ADMIN_USERNAME"]
 $AdminPassword = $configs["ADMIN_PASSWORD"]
 $TemplateFilePath = "linux.bicep"
+$Port = Get-Random -Minimum 1024 -Maximum 65537
 
 Write-Host "DirectoryId: $DirectoryId"
 Write-Host "SubscriptionId: $SubscriptionId"
@@ -72,6 +73,7 @@ Write-Host "Location: $Location"
 Write-Host "VM Name: $VmName"
 Write-Host "Admin Username: $AdminUsername"
 Write-Host "Admin Password: $AdminPassword"
+Write-Host "Port: $Port"
 
 function Confirm-VmName {
     param (
@@ -142,6 +144,7 @@ $deploymentOutput = az deployment group create `
         pVmName=$VmName `
         pAdminUsername=$AdminUsername `
         pAdminPassword=$AdminPassword `
+        pCustomPort=$Port `
         pSshPublicKey= `
     --output json | Tee-Object -Variable deploymentOutput
 
@@ -164,26 +167,22 @@ if ($null -eq $IpAddress -or $null -eq $Hostname) {
     exit 1
 }
 
-Write-Host "IP Address: $IpAddress"
-Write-Host "Hostname: $Hostname"
-
 $setupAddress = "https://raw.githubusercontent.com/ultracold273/deploy_azure/main/setup.sh"
 
 $commandOutput = az vm run-command invoke `
     --resource-group $ResourceGroupName `
     --name $VmName `
     --command-id RunShellScript `
-    --scripts "curl -s $setupAddress | bash -s -- $Hostname $IpAddress" | Tee-Object -Variable commandOutput
+    --scripts "curl -s $setupAddress | bash -s -- $Hostname $IpAddress $Port" | Tee-Object -Variable commandOutput
 
 $commandOutput = $commandOutput | ConvertFrom-Json
 $Message = $commandOutput.value[0].message
 
-if ($Message -match "Now you can setup your client with passcode: (\w+)") {
-    $passcode1 = $matches[1]
-    # $passcode2 = $matches[2]
-    Write-Host "Passcode 1: $passcode1"
-    # Write-Host "Passcode 2: $passcode2"
+Write-Host "IP Address: $IpAddress"
+Write-Host "Hostname: $Hostname"
+
+if ($Message -match "\\n[Summary] (\w+)\\n") {
+    Write-Host $matches[1]
 } else {
-    Write-Host "Failed to get the passcode. Exit.."
     exit 1
 }
