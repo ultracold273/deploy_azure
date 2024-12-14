@@ -116,7 +116,8 @@ if [ -z "$resourceGroup" ]; then
     az group create --name $RESOURCE_GROUP_NAME --location $LOCATION --output none
 fi
 
-echo "Deploying..."
+echo Start to deploy server...
+
 PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pCustomPort=$PORT pSshPublicKey="
 deploymentOutput=$(az deployment group create \
     --resource-group "$RESOURCE_GROUP_NAME" \
@@ -124,11 +125,18 @@ deploymentOutput=$(az deployment group create \
     --parameters $PARAMETERS \
     --output json | tee /dev/tty)
 
-HOSTNAME=$(echo "$deploymentOutput" | jq '.properties.outputs.hostname.value' )
-IPADDRESS=$(echo "$deploymentOutput" | jq '.properties.outputs.ipAddress.value' )
+DEPLOYRESULT=$(echo "$deploymentOutput" | jq -r '.properties.provisioningState')
 
-echo VM Hostname: $HOSTNAME
-echo VM IP Address: $IPADDRESS
+echo Deployment Result: $DEPLOYRESULT
+
+if ! [[ "$DEPLOYRESULT" == "Succeeded" ]]; then
+    exit 1
+fi
+
+HOSTNAME=$(echo "$deploymentOutput" | jq -r '.properties.outputs.hostname.value' )
+IPADDRESS=$(echo "$deploymentOutput" | jq -r '.properties.outputs.ipAddress.value' )
+
+echo Start to configure server...
 
 SETUP_ADDRESS="https://raw.githubusercontent.com/ultracold273/deploy_azure/main/setup.sh"
 
@@ -139,6 +147,16 @@ scriptOutput=$(az vm run-command invoke \
     --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS $PORT" \
     --output json | tee /dev/tty)
 
-MESSAGE=$(echo "$scriptOutput" | jq '.value[0].message' )
+MESSAGE=$(echo "$scriptOutput" | jq -r '.value[0].message' )
 
-echo $MESSAGE
+SUMMARY=$(echo "$MESSAGE" | grep -oE '\[Summary\]: ([^[]*)' | sed -e 's/\[Summary\]:\s*//g')
+
+echo IP Address: $IPADDRESS
+echo Hostname: $HOSTNAME
+
+if ! [[ -z $SUMMARY ]]; then
+    echo $SUMMARY
+else
+    echo $MESSAGE
+    exit 1
+fi

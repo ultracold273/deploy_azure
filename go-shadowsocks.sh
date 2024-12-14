@@ -89,7 +89,7 @@ LimitNOFILE=32768
 WantedBy=multi-user.target
 EOF
         echo Reloading systemd daemon...
-        sudo systemctl daemon-reload
+        systemctl daemon-reload
     else
         echo Skipping installing $NAME systemd service...
     fi
