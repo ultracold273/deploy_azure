@@ -136,6 +136,8 @@ if (-not $resourceGroup) {
     az group create --name $ResourceGroupName --location $Location --output none
 }
 
+Write-Host "Start to deploy server..."
+
 $deploymentOutput = az deployment group create `
     --resource-group $ResourceGroupName `
     --template-file $TemplateFilePath `
@@ -152,12 +154,11 @@ $deploymentOutput = $deploymentOutput | ConvertFrom-Json
 
 $DeploymentResult = $deploymentOutput.properties.provisioningState
 
+Write-Host "Deployment Result: $DeploymentResult"
+
 if ($DeploymentResult -ne "Succeeded") {
-    Write-Host "Deployment failed."
     exit 1
 }
-
-Write-Host "Deployment Result: $DeploymentResult"
 
 $IpAddress = $deploymentOutput.properties.outputs.ipAddress.value
 $Hostname = $deploymentOutput.properties.outputs.hostname.value
@@ -166,6 +167,8 @@ if ($null -eq $IpAddress -or $null -eq $Hostname) {
     Write-Host "Failed to get the IP address or hostname. Exit.."
     exit 1
 }
+
+Write-Host "Start to configure server..."
 
 $setupAddress = "https://raw.githubusercontent.com/ultracold273/deploy_azure/main/setup.sh"
 
@@ -181,8 +184,9 @@ $Message = $commandOutput.value[0].message
 Write-Host "IP Address: $IpAddress"
 Write-Host "Hostname: $Hostname"
 
-if ($Message -match "\\n[Summary] (\w+)\\n") {
+if ($Message -match "\n\[Summary\]: (.*)\n\n") {
     Write-Host $matches[1]
 } else {
+    Write-Host "Command Output: $Message"
     exit 1
 }
