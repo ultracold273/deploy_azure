@@ -8,15 +8,18 @@ param pSshPublicKey string
 param pCustomPort int?
 
 // Network Resource Declaration
-var vAddressPrefix = '10.1.0.0/16'
-var vSubnetAddressPrefix = '10.1.1.0/24'
+var vAddressV4Prefix = '10.1.0.0/16'
+var vAddressV6Prefix = 'fd00:10:0::/48'
+var vSubnetAddressV4Prefix = '10.1.1.0/24'
+var vSubnetAddressV6Prefix = 'fd00:10:0:1::/64'
 resource rVirtualNetwork 'Microsoft.Network/virtualNetworks@2023-06-01' = {
   name: 'vnet-${pVmName}'
   location: pLocation
   properties: {
     addressSpace: {
       addressPrefixes: [
-        vAddressPrefix
+        vAddressV4Prefix
+        vAddressV6Prefix
       ]
     }
   }
@@ -26,13 +29,16 @@ resource rSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-06-01' = {
   name: 'subnet-${pVmName}'
   parent: rVirtualNetwork
   properties: {
-    addressPrefix: vSubnetAddressPrefix
+    addressPrefixes: [
+      vSubnetAddressV4Prefix
+      vSubnetAddressV6Prefix
+    ]
     privateEndpointNetworkPolicies: 'Enabled'
     privateLinkServiceNetworkPolicies: 'Enabled'
   }
 }
 
-resource rPublicIp 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
+resource rPublicIpv4 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
   name: 'pip-${pVmName}'
   location: pLocation
   sku: {
@@ -42,7 +48,23 @@ resource rPublicIp 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
     publicIPAllocationMethod: 'Static'
     publicIPAddressVersion: 'IPv4'
     dnsSettings: {
-      domainNameLabel: toLower(pVmName)
+      domainNameLabel: '${toLower(pVmName)}-v4'
+    }
+    idleTimeoutInMinutes: 4
+  }
+}
+
+resource rPublicIpv6 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
+  name: 'pip6-${pVmName}'
+  location: pLocation
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+    publicIPAddressVersion: 'IPv6'
+    dnsSettings: {
+      domainNameLabel: '${toLower(pVmName)}-v6'
     }
     idleTimeoutInMinutes: 4
   }
@@ -116,14 +138,30 @@ resource vNetworkInterface 'Microsoft.Network/networkInterfaces@2023-06-01' = {
   properties: {
     ipConfigurations: [
       {
-        name: 'ipconfig-${pVmName}'
+        name: 'ipv4-${pVmName}'
         properties: {
+          primary: true
+          privateIPAddressVersion: 'IPv4'
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
             id: rSubnet.id
           }
           publicIPAddress: {
-            id: rPublicIp.id
+            id: rPublicIpv4.id
+          }
+        }
+      }
+      {
+        name: 'ipv6-${pVmName}'
+        properties: {
+          primary: false
+          privateIPAddressVersion: 'IPv6'
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: rSubnet.id
+          }
+          publicIPAddress: {
+            id: rPublicIpv6.id
           }
         }
       }
@@ -242,5 +280,7 @@ resource rVm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
 // }
 
 output adminUsername string = pAdminUsername
-output ipAddress string = rPublicIp.properties.ipAddress
-output hostname string = rPublicIp.properties.dnsSettings.fqdn
+output ipAddress string = rPublicIpv4.properties.ipAddress
+output hostname string = rPublicIpv4.properties.dnsSettings.fqdn
+output ipAddressV6 string = rPublicIpv6.properties.ipAddress
+output hostnameV6 string = rPublicIpv6.properties.dnsSettings.fqdn
