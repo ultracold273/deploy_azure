@@ -39,7 +39,7 @@ resource rSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-06-01' = {
 }
 
 resource rPublicIpv4 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
-  name: 'pip-${pVmName}'
+  name: 'pip4-${pVmName}'
   location: pLocation
   sku: {
     name: 'Standard'
