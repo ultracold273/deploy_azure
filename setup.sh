@@ -48,7 +48,7 @@ server {
     listen 127.0.0.1:80 default_server;
     server_name $domain;
     location / {
-        proxy_pass https://ultracold273.github.io;
+        proxy_pass https://google.com;
     }
 }
 
