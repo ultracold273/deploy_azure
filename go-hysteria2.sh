@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# if [[ $(id -u) != 0 ]]; then
-#     echo Please run this script as root.
-#     exit 1
-# fi
+if [[ $(id -u) != 0 ]]; then
+    echo Please run this script as root.
+    exit 1
+fi
 
 if [[ $(uname -m 2> /dev/null) != x86_64 ]]; then
     echo Please run this script on x86_64 machine.
