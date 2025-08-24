@@ -206,7 +206,7 @@ resource rVm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   location: pLocation
   properties: {
     hardwareProfile: {
-      vmSize: 'Standard_B2ats_v2'
+      vmSize: 'Standard_B2ts_v2'
     }
     storageProfile: {
       imageReference: vImageReference

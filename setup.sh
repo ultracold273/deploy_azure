@@ -179,4 +179,4 @@ setup_shadowsocks
 ip_stack_setup
 
 echo Done!
-echo \[Summary\]: Setup your Trojan client with $PASSWORD1, Port: 443 and SS client with $PASSWORD2, Port: $SS_PORT
+echo \[Summary\]: Setup your Trojan \(Domain: $DOMAIN\)/Hysteria2 \(Domain: $DOMAINV6\) client with $PASSWORD1, Port: 443 and SS \(Domain: $DOMAIN\) client with $PASSWORD2, Port: $SS_PORT
