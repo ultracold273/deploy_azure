@@ -162,6 +162,7 @@ if ($DeploymentResult -ne "Succeeded") {
 
 $IpAddress = $deploymentOutput.properties.outputs.ipAddress.value
 $Hostname = $deploymentOutput.properties.outputs.hostname.value
+$HostnameV6 = $deploymentOutput.properties.outputs.hostnameV6.value
 
 if ($null -eq $IpAddress -or $null -eq $Hostname) {
     Write-Host "Failed to get the IP address or hostname. Exit.."
@@ -176,7 +177,7 @@ $commandOutput = az vm run-command invoke `
     --resource-group $ResourceGroupName `
     --name $VmName `
     --command-id RunShellScript `
-    --scripts "curl -s $setupAddress | bash -s -- $Hostname $IpAddress $Port" | Tee-Object -Variable commandOutput
+    --scripts "curl -s $setupAddress | bash -s -- $Hostname $HostnameV6 $IpAddress $Port" | Tee-Object -Variable commandOutput
 
 $commandOutput = $commandOutput | ConvertFrom-Json
 $Message = $commandOutput.value[0].message

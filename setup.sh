@@ -3,8 +3,9 @@
 CERT_PATH=/etc/letsencrypt/live
 CERT_CHALLENGE_PATH=/var/www/acme-challenge
 DOMAIN=$1
-IPADDR=$2
-SS_PORT=$3
+DOMAINV6=$2
+IPADDR=$3
+SS_PORT=$4
 PASSWORD1=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 10)
 PASSWORD2=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)
 
@@ -22,6 +23,7 @@ install_deps() {
 create_users() {
     execute groupadd certusers
     execute useradd -r -M -G certusers trojan
+    execute useradd -r -M -G certusers hysteria
     execute useradd -r -m -G certusers acme
 }
 
@@ -90,6 +92,11 @@ setup_acme() {
         -d $DOMAIN \
         --key-file $CERT_PATH/private.key \
         --fullchain-file $CERT_PATH/certificate.crt"
+    run_as_user acme "acme.sh --issue -d $DOMAINV6 -w $CERT_CHALLENGE_PATH"
+    run_as_user acme "acme.sh --install-cert \
+        -d $DOMAINV6 \
+        --key-file $CERT_PATH/privatev6.key \
+        --fullchain-file $CERT_PATH/certificatev6.crt"
     run_as_user acme "acme.sh --upgrade --auto-upgrade"
 
     echo "Grant keys to certusers groups"
@@ -120,6 +127,22 @@ setup_trojan() {
     echo "0 0 1 * * killall -s SIGUSR1 trojan" | crontab -u trojan -
 }
 
+setup_hysteria() {
+    HYSTERIA_BIN=/usr/local/bin/hysteria
+    HYSTERIA_CONFIG=/usr/local/etc/hysteria
+    HYSTERIA_CONFIG_FILE=$HYSTERIA_CONFIG/config.yaml
+    echo "Install Hysteria ..."
+    curl -fsSL https://raw.githubusercontent.com/ultracold273/deploy_azure/main/go-hysteria2.sh | bash -s -- $CERT_PATH $PASSWORD1
+
+    execute chown -R hysteria:hysteria $HYSTERIA_CONFIG
+    
+    echo "Enable Hysteria to bind ports with number lower than 1024"
+    execute setcap CAP_NET_BIND_SERVICE=+eip $HYSTERIA_BIN
+
+    execute systemctl enable hysteria
+    execute systemctl restart hysteria
+}
+
 setup_shadowsocks() {
     SS_BIN=/usr/local/bin/ssservice
     SS_CONFIG=/usr/local/etc/shadowsocks
@@ -132,9 +155,12 @@ setup_shadowsocks() {
     execute systemctl restart shadowsocks
 }
 
-enable_congestion_control() {
+ip_stack_setup() {
+    # Enable BBR congestion control
     echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    # Bind IPv6 socket to IPv6 only, required by Hysteria
+    echo "net.ipv6.bindv6only=1" >> /etc/sysctl.conf
     sysctl -p
 }
 
@@ -148,8 +174,9 @@ create_users
 setup_nginx
 setup_acme
 setup_trojan
+setup_hysteria
 setup_shadowsocks
-enable_congestion_control
+ip_stack_setup
 
 echo Done!
 echo \[Summary\]: Setup your Trojan client with $PASSWORD1, Port: 443 and SS client with $PASSWORD2, Port: $SS_PORT

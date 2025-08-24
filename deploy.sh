@@ -135,6 +135,7 @@ fi
 
 HOSTNAME=$(echo "$deploymentOutput" | jq -r '.properties.outputs.hostname.value' )
 IPADDRESS=$(echo "$deploymentOutput" | jq -r '.properties.outputs.ipAddress.value' )
+HOSTNAMEV6=$(echo "$deploymentOutput" | jq -r '.properties.outputs.hostnameV6.value' )
 
 echo Start to configure server...
 
@@ -144,7 +145,7 @@ scriptOutput=$(az vm run-command invoke \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --name "$VM_NAME" \
     --command-id RunShellScript \
-    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $IPADDRESS $PORT" \
+    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $HOSTNAMEV6 $IPADDRESS $PORT" \
     --output json | tee /dev/tty)
 
 MESSAGE=$(echo "$scriptOutput" | jq -r '.value[0].message' )

@@ -78,7 +78,7 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
       {
         name: 'Allow-SSH'
         properties: {
-          protocol: 'Tcp'
+          protocol: 'TCP'
           sourcePortRange: '*'
           destinationPortRange: '22'
           sourceAddressPrefix: '*'
@@ -114,6 +114,19 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
           direction: 'Inbound'
         }
       }
+      {
+        name: 'Allow-QUIC'
+        properties: {
+          protocol: 'UDP'
+          sourcePortRange: '*'
+          destinationPortRange: '443'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Allow'
+          priority: 130
+          direction: 'Inbound'
+        }
+      }
     ], (pCustomPort == null) ? [] : [
       {
         name: 'Allow-CustomPort'
@@ -124,7 +137,7 @@ resource rNetworkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-
           sourceAddressPrefix: '*'
           destinationAddressPrefix: '*'
           access: 'Allow'
-          priority: 130
+          priority: 140
           direction: 'Inbound'
         }
       }
