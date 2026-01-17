@@ -167,6 +167,8 @@ ip_stack_setup() {
 
 setup_monitoring() {
     MONITOR_SCRIPT=/usr/local/bin/monitor.sh
+    MONITOR_CONFIG_DIR=/usr/local/etc/monitor
+    MONITOR_CONFIG=$MONITOR_CONFIG_DIR/config.env
     MONITOR_URL="https://raw.githubusercontent.com/ultracold273/deploy_azure/main/monitor.sh"
     
     echo "Installing monitoring script..."
@@ -176,15 +178,16 @@ setup_monitoring() {
     # Create state directory
     mkdir -p /var/run/service-monitor
     
-    # Create environment file for monitoring
-    cat <<EOF > /etc/monitor.env
+    # Create config directory and environment file
+    mkdir -p $MONITOR_CONFIG_DIR
+    cat <<EOF > $MONITOR_CONFIG
 NTFY_TOPIC=$NTFY_TOPIC
 VM_NAME=$DOMAIN
 EOF
-    chmod 600 /etc/monitor.env
+    chmod 600 $MONITOR_CONFIG
     
     # Add cron job to run once daily at 6:00 AM UTC
-    echo "0 6 * * * root . /etc/monitor.env && $MONITOR_SCRIPT" > /etc/cron.d/service-monitor
+    echo "0 6 * * * root . $MONITOR_CONFIG && $MONITOR_SCRIPT" > /etc/cron.d/service-monitor
     chmod 644 /etc/cron.d/service-monitor
     
     # Add Hysteria certificate reload cron (was missing)
