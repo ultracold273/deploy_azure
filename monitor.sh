@@ -5,6 +5,12 @@
 # Features: layered health checks, auto-remediation with rate limiting, ntfy.sh alerts
 #
 
+# Source config file if it exists (for environment variables)
+CONFIG_FILE="/usr/local/etc/monitor/config.env"
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+fi
+
 # Configuration
 CERT_PATH=/etc/letsencrypt/live
 STATE_DIR=/var/run/service-monitor
@@ -16,10 +22,10 @@ VM_NAME="${VM_NAME:-$(hostname)}"
 CERT_WARN_DAYS=14
 CERT_CRITICAL_DAYS=3
 MAX_RESTARTS=3
-RESTART_WINDOW=3600  # 1 hour in seconds
+RESTART_WINDOW=86400  # 24 hours in seconds
 
 # Services to monitor
-SERVICES=("nginx" "trojan" "hysteria" "shadowsocks-rust")
+SERVICES=("nginx" "trojan" "hysteria" "shadowsocks")
 
 # Certificate files to check
 CERT_FILES=("certificate.crt" "certificatev6.crt")

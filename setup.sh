@@ -186,8 +186,8 @@ VM_NAME=$DOMAIN
 EOF
     chmod 600 $MONITOR_CONFIG
     
-    # Add cron job to run once daily at 6:00 AM UTC
-    echo "0 6 * * * root . $MONITOR_CONFIG && $MONITOR_SCRIPT" > /etc/cron.d/service-monitor
+    # Add cron job to run 4 times daily (every 6 hours: midnight, 6am, noon, 6pm UTC)
+    echo "0 */6 * * * root $MONITOR_SCRIPT" > /etc/cron.d/service-monitor
     chmod 644 /etc/cron.d/service-monitor
     
     # Add Hysteria certificate reload cron (was missing)
