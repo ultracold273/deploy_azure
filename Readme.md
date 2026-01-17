@@ -36,3 +36,14 @@ The script will automatically set up a Trojan server with random generated passc
 Setup your client to connect to the server.
 
 Then you are done.
+
+# Debug
+If we cannot connect to the remote server due to certificate expiration error, most probably it's due to the nginx server is down. Log in to your VM via SSH, and try to restart the nginx server by 
+```
+$ sudo systemctl restart nginx
+```
+Then, renew the certificate using the follow code:
+```
+$ sudo -i -u acme
+$ acme.sh --cron
+```

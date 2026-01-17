@@ -6,6 +6,7 @@ DOMAIN=$1
 DOMAINV6=$2
 IPADDR=$3
 SS_PORT=$4
+NTFY_TOPIC=${5:-}
 PASSWORD1=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 10)
 PASSWORD2=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)
 
@@ -164,8 +165,37 @@ ip_stack_setup() {
     sysctl -p
 }
 
-if [ $# -lt 2 ]; then
-    echo "Error: You need at least two arguments"
+setup_monitoring() {
+    MONITOR_SCRIPT=/usr/local/bin/monitor.sh
+    MONITOR_URL="https://raw.githubusercontent.com/ultracold273/deploy_azure/main/monitor.sh"
+    
+    echo "Installing monitoring script..."
+    curl -fsSL $MONITOR_URL -o $MONITOR_SCRIPT
+    chmod +x $MONITOR_SCRIPT
+    
+    # Create state directory
+    mkdir -p /var/run/service-monitor
+    
+    # Create environment file for monitoring
+    cat <<EOF > /etc/monitor.env
+NTFY_TOPIC=$NTFY_TOPIC
+VM_NAME=$DOMAIN
+EOF
+    chmod 600 /etc/monitor.env
+    
+    # Add cron job to run once daily at 6:00 AM UTC
+    echo "0 6 * * * root . /etc/monitor.env && $MONITOR_SCRIPT" > /etc/cron.d/service-monitor
+    chmod 644 /etc/cron.d/service-monitor
+    
+    # Add Hysteria certificate reload cron (was missing)
+    echo "0 0 1 * * root systemctl restart hysteria" > /etc/cron.d/hysteria-cert-reload
+    chmod 644 /etc/cron.d/hysteria-cert-reload
+    
+    echo "Monitoring setup complete. Alerts will be sent to ntfy.sh/$NTFY_TOPIC"
+}
+
+if [ $# -lt 4 ]; then
+    echo "Error: You need at least four arguments (DOMAIN, DOMAINV6, IPADDR, SS_PORT)"
     exit 1
 fi
 
@@ -177,6 +207,7 @@ setup_trojan
 setup_hysteria
 setup_shadowsocks
 ip_stack_setup
+setup_monitoring
 
 echo Done!
 echo \[Summary\]: Setup your Trojan \(Domain: $DOMAIN\)/Hysteria2 \(Domain: $DOMAINV6\) client with $PASSWORD1, Port: 443 and SS \(Domain: $DOMAIN\) client with $PASSWORD2, Port: $SS_PORT

@@ -15,6 +15,7 @@ while IFS='=' read -r key value; do
 done < <(grep -E '^[^#]*=' "$TOML_FILE")
 
 TARGET_KEYS=("DIRECTORY_ID" "SUBSCRIPTION_ID" "RESOURCE_GROUP_NAME" "LOCATION" "VM_NAME" "ADMIN_USERNAME" "ADMIN_PASSWORD")
+OPTIONAL_KEYS=("NTFY_TOPIC")
 
 for key in "${TARGET_KEYS[@]}"; do
     if [[ -v config[$key] ]]; then
@@ -23,6 +24,17 @@ for key in "${TARGET_KEYS[@]}"; do
     else
         echo "Cannot find $key, exit..."
         exit 1
+    fi
+done
+
+# Handle optional keys
+for key in "${OPTIONAL_KEYS[@]}"; do
+    if [[ -v config[$key] ]]; then
+        echo "Check $key -- DONE (optional)"
+        declare "$key=${config[$key]}"
+    else
+        echo "Optional key $key not found, using default"
+        declare "$key="
     fi
 done
 
@@ -145,7 +157,7 @@ scriptOutput=$(az vm run-command invoke \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --name "$VM_NAME" \
     --command-id RunShellScript \
-    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $HOSTNAMEV6 $IPADDRESS $PORT" \
+    --scripts "curl -s $SETUP_ADDRESS | bash -s -- $HOSTNAME $HOSTNAMEV6 $IPADDRESS $PORT $NTFY_TOPIC" \
     --output json | tee /dev/tty)
 
 MESSAGE=$(echo "$scriptOutput" | jq -r '.value[0].message' )

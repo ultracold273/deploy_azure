@@ -46,11 +46,22 @@ function ConvertFrom-Toml {
 $configs = Get-Content $TOML_FILE | ConvertFrom-Toml
 
 $validKeys = @("DIRECTORY_ID", "SUBSCRIPTION_ID", "RESOURCE_GROUP_NAME", "LOCATION", "VM_NAME", "ADMIN_USERNAME", "ADMIN_PASSWORD")
+$optionalKeys = @("NTFY_TOPIC")
 
 $validKeys | ForEach-Object {
     if (-not $configs.ContainsKey($_)) {
         Write-Host "Missing key $_ in $TOML_FILE"
         exit 1
+    }
+}
+
+# Handle optional keys with defaults
+$optionalKeys | ForEach-Object {
+    if (-not $configs.ContainsKey($_)) {
+        $configs[$_] = ""
+        Write-Host "Optional key $_ not found, using default"
+    } else {
+        Write-Host "Check $_ -- DONE (optional)"
     }
 }
 
@@ -63,6 +74,7 @@ $Location = $configs["LOCATION"]
 $VmName = $configs["VM_NAME"]
 $AdminUsername = $configs["ADMIN_USERNAME"]
 $AdminPassword = $configs["ADMIN_PASSWORD"]
+$NtfyTopic = $configs["NTFY_TOPIC"]
 $TemplateFilePath = "linux.bicep"
 $Port = Get-Random -Minimum 1024 -Maximum 65537
 
@@ -177,7 +189,7 @@ $commandOutput = az vm run-command invoke `
     --resource-group $ResourceGroupName `
     --name $VmName `
     --command-id RunShellScript `
-    --scripts "curl -s $setupAddress | bash -s -- $Hostname $HostnameV6 $IpAddress $Port" | Tee-Object -Variable commandOutput
+    --scripts "curl -s $setupAddress | bash -s -- $Hostname $HostnameV6 $IpAddress $Port $NtfyTopic" | Tee-Object -Variable commandOutput
 
 $commandOutput = $commandOutput | ConvertFrom-Json
 $Message = $commandOutput.value[0].message

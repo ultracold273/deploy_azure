@@ -7,3 +7,5 @@ LOCATION = "southeastasia"
 VM_NAME = "your_vm_name"
 ADMIN_USERNAME = "your_admin_username"
 ADMIN_PASSWORD = "your_admin_password"
+[monitoring]
+NTFY_TOPIC = "" # Optional: ntfy.sh topic name for alerts (e.g., "myserver-xyz123")
