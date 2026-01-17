@@ -182,7 +182,6 @@ setup_monitoring() {
     mkdir -p $MONITOR_CONFIG_DIR
     cat <<EOF > $MONITOR_CONFIG
 NTFY_TOPIC=$NTFY_TOPIC
-VM_NAME=$DOMAIN
 EOF
     chmod 600 $MONITOR_CONFIG
     

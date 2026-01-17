@@ -16,7 +16,7 @@ CERT_PATH=/etc/letsencrypt/live
 STATE_DIR=/var/run/service-monitor
 LOG_FILE=/var/log/monitor.log
 NTFY_TOPIC="${NTFY_TOPIC:-}"
-VM_NAME="${VM_NAME:-$(hostname)}"
+VM_NAME="$(hostname)"
 
 # Thresholds
 CERT_WARN_DAYS=14
