@@ -20,6 +20,8 @@ Find your directory ID (i.e, tenant ID in some cases) and the subscription ID yo
 
 You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Noted that try to choose some unique name for your vm as it will also serve as the DNS for your VM.
 
+We also have a health check script running on the VM monitoring the certificate expiry and services status. The notification integrates with ntfy.sh, if you are interested with receiving alerts, you can put the topic name under the toml file as well. For more information, please visit [ntfy.sh](https://ntfy.sh/)
+
 # Execute
 On windows, use powershell to execute:
 ```powershell
