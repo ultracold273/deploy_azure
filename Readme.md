@@ -18,7 +18,7 @@ ADMIN_PASSWORD = "your_admin_password"
 You can find a copy of sample config files in this repo by `config-sample.toml`.
 Find your directory ID (i.e, tenant ID in some cases) and the subscription ID you own. Put them in the respective field.
 
-You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Noted that try to choose some unique name for your vm as it will also serve as the DNS for your VM.
+You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Keep `VM_NAME` reasonably short; the deploy scripts now enforce a maximum length of 20 characters so that the generated Azure hostname stays within a safe range for nginx startup.
 
 We also have a health check script running on the VM monitoring the certificate expiry and services status. The notification integrates with ntfy.sh, if you are interested with receiving alerts, you can put the topic name under the toml file as well. For more information, please visit [ntfy.sh](https://ntfy.sh/)
 

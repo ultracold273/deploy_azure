@@ -21,6 +21,22 @@ install_deps() {
     apt install -y socat cron curl libcap2-bin xz-utils nginx
 }
 
+configure_nginx_hash() {
+    NGINX_CONF=/etc/nginx/nginx.conf
+
+    if grep -Eq "^[[:space:]]*#?[[:space:]]*server_names_hash_bucket_size" "$NGINX_CONF"; then
+        sed -i 's/^[[:space:]]*#\?[[:space:]]*server_names_hash_bucket_size.*/    server_names_hash_bucket_size 128;/' "$NGINX_CONF"
+    else
+        sed -i '/http {/a\    server_names_hash_bucket_size 128;' "$NGINX_CONF"
+    fi
+
+    if grep -Eq "^[[:space:]]*#?[[:space:]]*server_names_hash_max_size" "$NGINX_CONF"; then
+        sed -i 's/^[[:space:]]*#\?[[:space:]]*server_names_hash_max_size.*/    server_names_hash_max_size 1024;/' "$NGINX_CONF"
+    else
+        sed -i '/http {/a\    server_names_hash_max_size 1024;' "$NGINX_CONF"
+    fi
+}
+
 create_users() {
     execute groupadd certusers
     execute useradd -r -M -G certusers trojan
@@ -32,10 +48,12 @@ setup_nginx() {
     NGINX_ENABLE_SITE=/etc/nginx/sites-enabled
     NGINX_AVAILABLE_SITE=/etc/nginx/sites-available    
     echo "Setting up nginx.."
+    configure_nginx_hash
     execute rm $NGINX_ENABLE_SITE/default
     execute generate_nginx_template $NGINX_AVAILABLE_SITE/$DOMAIN $DOMAIN $IPADDR
     execute ln -s $NGINX_AVAILABLE_SITE/$DOMAIN $NGINX_ENABLE_SITE
 
+    execute nginx -t
     execute systemctl enable nginx
     execute systemctl restart nginx
 

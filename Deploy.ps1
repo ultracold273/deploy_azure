@@ -93,12 +93,12 @@ function Confirm-VmName {
         [string]$VmName
     )
 
-    if ($VmName.Length -lt 1 -or $VmName.Length -gt 64) {
-        Write-Host "The VM name must be 1-64 characters long."
+    if ($VmName.Length -lt 1 -or $VmName.Length -gt 20) {
+        Write-Host "The VM name must be 1-20 characters long."
         exit 1
     }
 
-    if ($VmName -cnotmatch "^[a-zA-Z0-9]([-a-zA-Z0-9]{0,62})[a-zA-Z0-9]$") {
+    if ($VmName -cnotmatch "^[a-zA-Z0-9]([-a-zA-Z0-9]{0,18})[a-zA-Z0-9]$") {
         Write-Host "The VM name must contain only letters and digits or hypen and cannot start or end with hypens"
         exit 1
     }
