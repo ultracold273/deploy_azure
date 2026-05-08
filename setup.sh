@@ -22,10 +22,19 @@ install_deps() {
 }
 
 configure_nginx_hash() {
-    cat <<EOF > /etc/nginx/conf.d/server-name-hash.conf
-server_names_hash_bucket_size 128;
-server_names_hash_max_size 1024;
-EOF
+    NGINX_CONF=/etc/nginx/nginx.conf
+
+    if grep -q "server_names_hash_bucket_size" "$NGINX_CONF"; then
+        sed -i 's/^\s*server_names_hash_bucket_size.*/    server_names_hash_bucket_size 128;/' "$NGINX_CONF"
+    else
+        sed -i '/http {/a\    server_names_hash_bucket_size 128;' "$NGINX_CONF"
+    fi
+
+    if grep -q "server_names_hash_max_size" "$NGINX_CONF"; then
+        sed -i 's/^\s*server_names_hash_max_size.*/    server_names_hash_max_size 1024;/' "$NGINX_CONF"
+    else
+        sed -i '/http {/a\    server_names_hash_max_size 1024;' "$NGINX_CONF"
+    fi
 }
 
 create_users() {
