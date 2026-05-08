@@ -2,6 +2,7 @@
 TOML_FILE="config.toml"
 
 TEMPLATE_FILE_PATH="linux.bicep"
+TARGET_FQDN_MAX=64
 
 declare -A config
 while IFS='=' read -r key value; do
@@ -15,7 +16,7 @@ while IFS='=' read -r key value; do
 done < <(grep -E '^[^#]*=' "$TOML_FILE")
 
 TARGET_KEYS=("DIRECTORY_ID" "SUBSCRIPTION_ID" "RESOURCE_GROUP_NAME" "LOCATION" "VM_NAME" "ADMIN_USERNAME" "ADMIN_PASSWORD")
-OPTIONAL_KEYS=("NTFY_TOPIC")
+OPTIONAL_KEYS=("NTFY_TOPIC" "DNS_LABEL")
 
 for key in "${TARGET_KEYS[@]}"; do
     if [[ -v config[$key] ]]; then
@@ -81,12 +82,122 @@ validate_vm_name() {
     return 0
 }
 
+validate_dns_label() {
+    local label="$1"
+    local length=${#label}
+
+    if [[ $length -lt 3 || $length -gt 60 ]]; then
+        echo "DNS label length shall be within 3 and 60."
+        return 1
+    fi
+
+    if [[ ! "$label" =~ ^[a-z]([-a-z0-9]{1,58})[a-z0-9]$ ]]; then
+        echo "DNS label shall contain only lowercase letters, digits or hyphens, start with a letter and end with a letter or digit."
+        return 1
+    fi
+
+    return 0
+}
+
+normalize_dns_label() {
+    local input="$1"
+    local normalized
+    normalized=$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g')
+    if [[ -z "$normalized" ]]; then
+        normalized="vm"
+    fi
+    if [[ ! "$normalized" =~ ^[a-z] ]]; then
+        normalized="v-$normalized"
+    fi
+    normalized=$(printf '%s' "$normalized" | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//')
+    if [[ -z "$normalized" ]]; then
+        normalized="vm"
+    fi
+    printf '%s' "$normalized"
+}
+
+build_dns_label_base() {
+    local vm_name="$1"
+    local location="$2"
+    local requested_label="$3"
+    local suffix=".${location}.cloudapp.azure.com"
+    local reserved="3"
+    local label_limit=$((TARGET_FQDN_MAX - ${#suffix} - reserved))
+
+    if (( label_limit > 60 )); then
+        label_limit=60
+    fi
+    if (( label_limit < 3 )); then
+        echo "Location suffix is too long to build a safe DNS label under target FQDN limit ${TARGET_FQDN_MAX}."
+        return 1
+    fi
+
+    local source="$requested_label"
+    if [[ -z "$source" ]]; then
+        source="$vm_name"
+    fi
+
+    local normalized
+    normalized=$(normalize_dns_label "$source")
+
+    local hash
+    hash=$(printf '%s' "$source" | sha256sum | cut -c1-8)
+
+    local sep="-"
+    local hash_len=${#hash}
+    local prefix_limit=$((label_limit - hash_len - ${#sep}))
+    if (( prefix_limit < 1 )); then
+        echo "Safe DNS label budget is too small."
+        return 1
+    fi
+
+    local prefix=${normalized:0:prefix_limit}
+    prefix=$(printf '%s' "$prefix" | sed -E 's/-+$//')
+    if [[ -z "$prefix" ]]; then
+        prefix="v"
+    fi
+
+    local candidate="$prefix-$hash"
+    candidate=$(printf '%s' "$candidate" | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//')
+
+    if [[ ! "$candidate" =~ ^[a-z] ]]; then
+        candidate="v-$candidate"
+    fi
+
+    if (( ${#candidate} > label_limit )); then
+        candidate=${candidate:0:label_limit}
+        candidate=$(printf '%s' "$candidate" | sed -E 's/-+$//')
+    fi
+
+    if ! validate_dns_label "$candidate"; then
+        return 1
+    fi
+
+    printf '%s' "$candidate"
+}
+
 validate_vm_name $VM_NAME
 status=$?
 if [[ $status -ne 0 ]]; then
     echo "Invalid VM name"
     exit 1
 fi
+
+DNS_LABEL_BASE=$(build_dns_label_base "$VM_NAME" "$LOCATION" "$DNS_LABEL")
+status=$?
+if [[ $status -ne 0 ]]; then
+    echo "Failed to generate a safe DNS label"
+    exit 1
+fi
+
+FQDN_V4="${DNS_LABEL_BASE}-v4.${LOCATION}.cloudapp.azure.com"
+FQDN_V6="${DNS_LABEL_BASE}-v6.${LOCATION}.cloudapp.azure.com"
+
+echo DNS Label Base: $DNS_LABEL_BASE
+echo Hostname v4: $FQDN_V4
+echo Hostname v6: $FQDN_V6
+
+echo Final FQDN lengths: v4=${#FQDN_V4}, v6=${#FQDN_V6}
 
 check_password $ADMIN_PASSWORD
 status=$?
@@ -130,7 +241,7 @@ fi
 
 echo Start to deploy server...
 
-PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pCustomPort=$PORT pSshPublicKey="
+PARAMETERS="pLocation=$LOCATION pVmName=$VM_NAME pDnsLabelBase=$DNS_LABEL_BASE pAdminUsername=$ADMIN_USERNAME pAdminPassword=$ADMIN_PASSWORD pCustomPort=$PORT pSshPublicKey="
 deploymentOutput=$(az deployment group create \
     --resource-group "$RESOURCE_GROUP_NAME" \
     --template-file "$TEMPLATE_FILE_PATH" \

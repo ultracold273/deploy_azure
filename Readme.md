@@ -14,11 +14,14 @@ LOCATION = "southeastasia"
 VM_NAME = "your_vm_name"
 ADMIN_USERNAME = "your_admin_username"
 ADMIN_PASSWORD = "your_admin_password"
+DNS_LABEL = "" # optional
 ```
 You can find a copy of sample config files in this repo by `config-sample.toml`.
 Find your directory ID (i.e, tenant ID in some cases) and the subscription ID you own. Put them in the respective field.
 
-You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm. Noted that try to choose some unique name for your vm as it will also serve as the DNS for your VM.
+You'll need to specify the resource group name you want to created on Azure and the location you want to put your vm.
+
+`VM_NAME` is used for the Azure VM resource name. The public DNS label is now generated separately to keep the final Azure FQDN short enough for Azure DNS, certificate issuance, and nginx startup. If you want to influence the public hostname, you can optionally set `DNS_LABEL` in `config.toml`; otherwise a safe DNS label is derived automatically from `VM_NAME`.
 
 We also have a health check script running on the VM monitoring the certificate expiry and services status. The notification integrates with ntfy.sh, if you are interested with receiving alerts, you can put the topic name under the toml file as well. For more information, please visit [ntfy.sh](https://ntfy.sh/)
 

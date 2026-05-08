@@ -1,4 +1,5 @@
 $TOML_FILE = "config.toml"
+$TargetFqdnMax = 64
 
 function ConvertFrom-Toml {
     [CmdletBinding()]
@@ -46,7 +47,7 @@ function ConvertFrom-Toml {
 $configs = Get-Content $TOML_FILE | ConvertFrom-Toml
 
 $validKeys = @("DIRECTORY_ID", "SUBSCRIPTION_ID", "RESOURCE_GROUP_NAME", "LOCATION", "VM_NAME", "ADMIN_USERNAME", "ADMIN_PASSWORD")
-$optionalKeys = @("NTFY_TOPIC")
+$optionalKeys = @("NTFY_TOPIC", "DNS_LABEL")
 
 $validKeys | ForEach-Object {
     if (-not $configs.ContainsKey($_)) {
@@ -75,6 +76,7 @@ $VmName = $configs["VM_NAME"]
 $AdminUsername = $configs["ADMIN_USERNAME"]
 $AdminPassword = $configs["ADMIN_PASSWORD"]
 $NtfyTopic = $configs["NTFY_TOPIC"]
+$DnsLabel = $configs["DNS_LABEL"]
 $TemplateFilePath = "linux.bicep"
 $Port = Get-Random -Minimum 1024 -Maximum 65537
 
@@ -106,6 +108,114 @@ function Confirm-VmName {
     Write-Host "VM name $VmName is valid."
 }
 
+function Confirm-DnsLabel {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$DnsLabel
+    )
+
+    if ($DnsLabel.Length -lt 3 -or $DnsLabel.Length -gt 60) {
+        Write-Host "The DNS label must be 3-60 characters long."
+        exit 1
+    }
+
+    if ($DnsLabel -cnotmatch "^[a-z]([-a-z0-9]{1,58})[a-z0-9]$") {
+        Write-Host "The DNS label must contain only lowercase letters, digits or hyphens, start with a letter, and end with a letter or digit."
+        exit 1
+    }
+}
+
+function Normalize-DnsLabel {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$InputLabel
+    )
+
+    $normalized = $InputLabel.ToLowerInvariant()
+    $normalized = [regex]::Replace($normalized, "[^a-z0-9-]", "-")
+    $normalized = [regex]::Replace($normalized, "-+", "-").Trim('-')
+
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        $normalized = "vm"
+    }
+
+    if ($normalized[0] -notmatch "[a-z]") {
+        $normalized = "v-$normalized"
+    }
+
+    $normalized = [regex]::Replace($normalized, "-+", "-").Trim('-')
+
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        $normalized = "vm"
+    }
+
+    return $normalized
+}
+
+function Get-Sha256Hex {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Text
+    )
+
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+        $hashBytes = $sha.ComputeHash($bytes)
+        return -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+    }
+    finally {
+        $sha.Dispose()
+    }
+}
+
+function New-SafeDnsLabelBase {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$VmName,
+        [Parameter(Mandatory = $true)]
+        [string]$Location,
+        [string]$RequestedLabel = ""
+    )
+
+    $suffix = ".${Location}.cloudapp.azure.com"
+    $reserved = 3 # reserve for -v4 / -v6 suffix
+    $labelLimit = [Math]::Min(60, $TargetFqdnMax - $suffix.Length - $reserved)
+
+    if ($labelLimit -lt 3) {
+        Write-Host "Location suffix is too long to build a safe DNS label under target FQDN limit $TargetFqdnMax."
+        exit 1
+    }
+
+    $source = if ([string]::IsNullOrWhiteSpace($RequestedLabel)) { $VmName } else { $RequestedLabel }
+    $normalized = Normalize-DnsLabel -InputLabel $source
+    $hash = (Get-Sha256Hex -Text $source).Substring(0, 8)
+    $prefixLimit = $labelLimit - $hash.Length - 1
+
+    if ($prefixLimit -lt 1) {
+        Write-Host "Safe DNS label budget is too small."
+        exit 1
+    }
+
+    $prefix = if ($normalized.Length -gt $prefixLimit) { $normalized.Substring(0, $prefixLimit) } else { $normalized }
+    $prefix = $prefix.TrimEnd('-')
+    if ([string]::IsNullOrWhiteSpace($prefix)) {
+        $prefix = "v"
+    }
+
+    $candidate = "$prefix-$hash"
+    $candidate = [regex]::Replace($candidate, "-+", "-").Trim('-')
+    if ($candidate[0] -notmatch "[a-z]") {
+        $candidate = "v-$candidate"
+    }
+    if ($candidate.Length -gt $labelLimit) {
+        $candidate = $candidate.Substring(0, $labelLimit).TrimEnd('-')
+    }
+
+    Confirm-DnsLabel -DnsLabel $candidate
+    return $candidate
+}
+
 function Confirm-Password {
     param (
         [Parameter(Mandatory = $true)]
@@ -133,6 +243,15 @@ function Confirm-Password {
 
 Confirm-VmName -VmName $VmName
 
+$DnsLabelBase = New-SafeDnsLabelBase -VmName $VmName -Location $Location -RequestedLabel $DnsLabel
+$HostnamePreview = "$DnsLabelBase-v4.$Location.cloudapp.azure.com"
+$HostnameV6Preview = "$DnsLabelBase-v6.$Location.cloudapp.azure.com"
+
+Write-Host "DNS Label Base: $DnsLabelBase"
+Write-Host "Hostname v4: $HostnamePreview"
+Write-Host "Hostname v6: $HostnameV6Preview"
+Write-Host "Final FQDN lengths: v4=$($HostnamePreview.Length), v6=$($HostnameV6Preview.Length)"
+
 Confirm-Password -Passkey $AdminPassword
 
 # Disable the subscription selector
@@ -156,6 +275,7 @@ $deploymentOutput = az deployment group create `
     --parameters `
         pLocation=$Location `
         pVmName=$VmName `
+        pDnsLabelBase=$DnsLabelBase `
         pAdminUsername=$AdminUsername `
         pAdminPassword=$AdminPassword `
         pCustomPort=$Port `

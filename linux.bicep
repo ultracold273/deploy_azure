@@ -6,6 +6,7 @@ param pAdminPassword string
 @secure()
 param pSshPublicKey string
 param pCustomPort int?
+param pDnsLabelBase string
 
 // Network Resource Declaration
 var vAddressV4Prefix = '10.1.0.0/16'
@@ -48,7 +49,7 @@ resource rPublicIpv4 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
     publicIPAllocationMethod: 'Static'
     publicIPAddressVersion: 'IPv4'
     dnsSettings: {
-      domainNameLabel: '${toLower(pVmName)}-v4'
+      domainNameLabel: '${pDnsLabelBase}-v4'
     }
     idleTimeoutInMinutes: 4
   }
@@ -64,7 +65,7 @@ resource rPublicIpv6 'Microsoft.Network/publicIPAddresses@2023-06-01' = {
     publicIPAllocationMethod: 'Static'
     publicIPAddressVersion: 'IPv6'
     dnsSettings: {
-      domainNameLabel: '${toLower(pVmName)}-v6'
+      domainNameLabel: '${pDnsLabelBase}-v6'
     }
     idleTimeoutInMinutes: 4
   }
